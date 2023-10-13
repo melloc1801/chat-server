@@ -25,6 +25,7 @@ func (s *server) Create(_ context.Context, req *desc.CreateChatRequest) (*desc.C
 
 	return &desc.CreateChatResponse{Id: 2}, nil
 }
+
 func (s *server) Delete(_ context.Context, req *desc.DeleteRequest) (*empty.Empty, error) {
 	fmt.Println("Delete request")
 	fmt.Println(color.GreenString("Id", req.Id))
@@ -32,6 +33,7 @@ func (s *server) Delete(_ context.Context, req *desc.DeleteRequest) (*empty.Empt
 
 	return &empty.Empty{}, nil
 }
+
 func (s *server) SendMessage(_ context.Context, req *desc.SendMessageRequest) (*empty.Empty, error) {
 	fmt.Println("SendMessage request")
 	fmt.Println(color.GreenString("From", req.From))
