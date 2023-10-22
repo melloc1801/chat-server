@@ -3,7 +3,7 @@
 create table message (
     id serial primary key,
     "from" varchar(64),
-    "to" varchar(64),
+    "text" text,
     created_at timestamp default now()
 );
 -- +goose StatementEnd

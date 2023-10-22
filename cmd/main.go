@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Masterminds/squirrel"
-	"github.com/fatih/color"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jackc/pgx/v4"
 	"google.golang.org/grpc"
@@ -18,6 +17,7 @@ const (
 	grpcPort          = 50052
 	chatTable         = "chat"
 	chatsToUsersTable = "chats_to_users"
+	messageTable      = "message"
 	dbDsn             = "host=localhost port=54322 dbname=chat-service user=dev_course password=1801 sslmode=disable"
 )
 
@@ -97,13 +97,28 @@ func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Em
 	return &empty.Empty{}, nil
 }
 
-func (s *server) SendMessage(_ context.Context, req *desc.SendMessageRequest) (*empty.Empty, error) {
-	fmt.Println("SendMessage request")
-	fmt.Println(color.GreenString("From", req.From))
-	fmt.Println(color.GreenString("Text", req.Text))
-	fmt.Println(color.GreenString("Timestamp", req.Timestamp))
-	fmt.Println("========================================")
+func (s *server) SendMessage(ctx context.Context, req *desc.SendMessageRequest) (*empty.Empty, error) {
+	from, text := req.From, req.Text
 
+	pool, err := pgx.Connect(ctx, dbDsn)
+	if err != nil {
+		log.Fatalf("failed to connect to database %v", err)
+	}
+
+	insertBuilder := squirrel.Insert(messageTable).
+		PlaceholderFormat(squirrel.Dollar).
+		Columns("\"from\"", "text").
+		Values(from, text)
+
+	query, args, err := insertBuilder.ToSql()
+	if err != nil {
+		log.Fatalf("failed to build query %v", err)
+	}
+
+	_, err = pool.Exec(ctx, query, args...)
+	if err != nil {
+		log.Fatalf("failed to execute %v", err)
+	}
 	return &empty.Empty{}, nil
 }
 
