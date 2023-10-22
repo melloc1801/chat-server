@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  chat-service-db:
+    image: postgres:14-alpine3.17
+    env_file:
+      - "local.env"
+    ports:
+      - "54322:5432"
