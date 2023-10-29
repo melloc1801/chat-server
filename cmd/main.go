@@ -47,8 +47,8 @@ func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc
 		return nil, errors.Wrapf(err, "Failed to build query %s", err)
 	}
 
-	var chatId int64
-	err = pool.QueryRow(ctx, query, args...).Scan(&chatId)
+	var chatID int64
+	err = pool.QueryRow(ctx, query, args...).Scan(&chatID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to execute %s", err)
 	}
@@ -56,8 +56,8 @@ func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc
 	for _, v := range req.Usernames {
 		insertBuider := squirrel.Insert(chatsToUsersTable).
 			PlaceholderFormat(squirrel.Dollar).
-			Columns("chatId", "username").
-			Values(chatId, v)
+			Columns("chatID", "username").
+			Values(chatID, v)
 
 		query, args, err := insertBuider.ToSql()
 		if err != nil {
@@ -70,7 +70,7 @@ func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc
 		}
 	}
 
-	return &desc.CreateChatResponse{Id: chatId}, nil
+	return &desc.CreateChatResponse{Id: chatID}, nil
 }
 
 func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Empty, error) {
