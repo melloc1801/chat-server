@@ -7,6 +7,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jackc/pgx/v4"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
@@ -27,12 +28,12 @@ type server struct {
 
 func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc.CreateChatResponse, error) {
 	if len(req.Usernames) == 0 {
-		log.Fatalf("usernames shouldn't be null")
+		return nil, errors.New("Usernames shouldn't be null")
 	}
 
 	pool, err := pgx.Connect(ctx, dbDsn)
 	if err != nil {
-		log.Fatalf("failed to connect to database %v", err)
+		return nil, errors.Wrapf(err, "Failed to connect to database %s", err)
 	}
 
 	insertBuilder := squirrel.Insert(chatTable).
@@ -43,13 +44,13 @@ func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc
 
 	query, args, err := insertBuilder.ToSql()
 	if err != nil {
-		log.Fatalf("failed to build query %v", err)
+		return nil, errors.Wrapf(err, "Failed to build query %s", err)
 	}
 
 	var chatId int64
 	err = pool.QueryRow(ctx, query, args...).Scan(&chatId)
 	if err != nil {
-		log.Fatalf("failed to execute %v", err)
+		return nil, errors.Wrapf(err, "Failed to execute %s", err)
 	}
 
 	for _, v := range req.Usernames {
@@ -60,12 +61,12 @@ func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc
 
 		query, args, err := insertBuider.ToSql()
 		if err != nil {
-			log.Fatalf("failed to build query %v", err)
+			return nil, errors.Wrapf(err, "Failed to build query %s", err)
 		}
 
 		_, err = pool.Exec(ctx, query, args...)
 		if err != nil {
-			log.Fatalf("failed to execute %v", err)
+			return nil, errors.Wrapf(err, "Failed to execute %s", err)
 		}
 	}
 
@@ -75,7 +76,7 @@ func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc
 func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Empty, error) {
 	pool, err := pgx.Connect(ctx, dbDsn)
 	if err != nil {
-		log.Fatalf("failed to connect to database %v", err)
+		return nil, errors.Wrapf(err, "Failed to connect to database %s", err)
 	}
 
 	deleteBuilder := squirrel.Delete(chatsToUsersTable).
@@ -83,12 +84,12 @@ func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Em
 
 	query, args, err := deleteBuilder.ToSql()
 	if err != nil {
-		log.Fatalf("failed to build query %v", err)
+		return nil, errors.Wrapf(err, "Failed to build query %s", err)
 	}
 
 	_, err = pool.Exec(ctx, query, args...)
 	if err != nil {
-		log.Fatalf("failed to execute %v", err)
+		return nil, errors.Wrapf(err, "Failed to execute %s", err)
 	}
 
 	return &empty.Empty{}, nil
@@ -97,7 +98,7 @@ func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Em
 func (s *server) SendMessage(ctx context.Context, req *desc.SendMessageRequest) (*empty.Empty, error) {
 	pool, err := pgx.Connect(ctx, dbDsn)
 	if err != nil {
-		log.Fatalf("failed to connect to database %v", err)
+		return nil, errors.Wrapf(err, "Failed to connect to database %s", err)
 	}
 
 	insertBuilder := squirrel.Insert(messageTable).
@@ -107,12 +108,12 @@ func (s *server) SendMessage(ctx context.Context, req *desc.SendMessageRequest) 
 
 	query, args, err := insertBuilder.ToSql()
 	if err != nil {
-		log.Fatalf("failed to build query %v", err)
+		return nil, errors.Wrapf(err, "Failed to build query %s", err)
 	}
 
 	_, err = pool.Exec(ctx, query, args...)
 	if err != nil {
-		log.Fatalf("failed to execute %v", err)
+		return nil, errors.Wrapf(err, "Failed to execute %s", err)
 	}
 	return &empty.Empty{}, nil
 }
