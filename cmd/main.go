@@ -26,8 +26,7 @@ type server struct {
 }
 
 func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc.CreateChatResponse, error) {
-	usernames := req.Usernames
-	if len(usernames) == 0 {
+	if len(req.Usernames) == 0 {
 		log.Fatalf("usernames shouldn't be null")
 	}
 
@@ -53,7 +52,7 @@ func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc
 		log.Fatalf("failed to execute %v", err)
 	}
 
-	for _, v := range usernames {
+	for _, v := range req.Usernames {
 		insertBuider := squirrel.Insert(chatsToUsersTable).
 			PlaceholderFormat(squirrel.Dollar).
 			Columns("chatId", "username").
@@ -74,15 +73,13 @@ func (s *server) Create(ctx context.Context, req *desc.CreateChatRequest) (*desc
 }
 
 func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Empty, error) {
-	id := req.Id
-
 	pool, err := pgx.Connect(ctx, dbDsn)
 	if err != nil {
 		log.Fatalf("failed to connect to database %v", err)
 	}
 
 	deleteBuilder := squirrel.Delete(chatsToUsersTable).
-		Where(squirrel.Eq{"chatId": id})
+		Where(squirrel.Eq{"chatId": req.Id})
 
 	query, args, err := deleteBuilder.ToSql()
 	if err != nil {
@@ -98,8 +95,6 @@ func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Em
 }
 
 func (s *server) SendMessage(ctx context.Context, req *desc.SendMessageRequest) (*empty.Empty, error) {
-	from, text := req.From, req.Text
-
 	pool, err := pgx.Connect(ctx, dbDsn)
 	if err != nil {
 		log.Fatalf("failed to connect to database %v", err)
@@ -108,7 +103,7 @@ func (s *server) SendMessage(ctx context.Context, req *desc.SendMessageRequest) 
 	insertBuilder := squirrel.Insert(messageTable).
 		PlaceholderFormat(squirrel.Dollar).
 		Columns("\"from\"", "text").
-		Values(from, text)
+		Values(req.From, req.Text)
 
 	query, args, err := insertBuilder.ToSql()
 	if err != nil {
